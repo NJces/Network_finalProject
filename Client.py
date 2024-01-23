@@ -33,7 +33,7 @@ def upload(path, command):
     
     client.send(command.encode(FORMAT))
 
-    msg = client.recv(SIZE).decode
+    msg = client.recv(SIZE).decode(FORMAT)
     print(msg, end="\n")
 
     filename = input("please enetr name for uploaded file: ")
@@ -41,18 +41,24 @@ def upload(path, command):
     client.send(filename.encode(FORMAT))
     client.send(filetype.encode(FORMAT))
 
-    msg = client.recv(SIZE).decode
+    msg = client.recv(SIZE).decode(FORMAT)
     print(msg, end="\n")
 
     file = open(path, "r")
     data = file.read()
     client.send(data.encode(FORMAT))
 
-    msg = client.recv(SIZE).decode
+    msg = client.recv(SIZE).decode(FORMAT)
     print(msg, end="\n")
 
     file.close()
 
+def pwd(command):
+    client.send(command.encode(FORMAT))
+
+    location = client.recv(SIZE).decode(FORMAT)
+    print(f"you are now in \"{location}\" location on Server\n")
+    client.send("ok".encode(FORMAT))
     
 while True:
     print(f"enter \"{Command['HELP'].value}\" to see command or \"{Command['QUIT'].value}\" if want to exit program\n")
@@ -73,6 +79,8 @@ while True:
     elif inp == Command['UPLOAD'].value and is_connected:
         path = input("please enetr file path you want to upload: ")
         upload(path, inp)
+    elif inp == Command['PWD'].value and is_connected:
+        pwd(inp)
 
 
 client.close()

@@ -38,6 +38,9 @@ def response():
             connection.sendto(msg.encode(FORMAT), ADDR)
         elif (request == Command['UPLOAD'].value):
             upload()
+        elif (request == Command['PWD'].value):
+            connection.sendto(PATH.encode(FORMAT), ADDR)
+            ackMsg = connection.recv(SIZE).decode(FORMAT)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
