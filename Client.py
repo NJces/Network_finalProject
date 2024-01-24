@@ -7,6 +7,8 @@ port = 2121
 ADDR = (iP, port)
 FORMAT = "utf-8"
 SIZE = 1024
+PATH = "client_download/"
+
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 is_connected = False
 
@@ -53,6 +55,28 @@ def upload(path, command):
 
     file.close()
 
+def download(path, command):
+    client.send(command.encode(FORMAT))
+
+    msg = client.recv(SIZE).decode(FORMAT)
+    print(msg, end="\n")
+
+    client.send(path.encode(FORMAT))
+
+    msg = client.recv(SIZE).decode(FORMAT)
+    print(msg, end="\n")
+    if (msg == "False"):#file not found
+        print("file not found!")
+        return
+    filename = client.recv(SIZE).decode(FORMAT)
+    data = client.recv(SIZE).decode(FORMAT)
+    file = open(PATH+filename, "w")
+    file.write(data)
+    client.send("file download seccesfully".encode(FORMAT))
+
+    file.close()
+
+
 def pwd(command):
     client.send(command.encode(FORMAT))
 
@@ -81,6 +105,9 @@ while True:
         upload(path, inp)
     elif inp == Command['PWD'].value and is_connected:
         pwd(inp)
+    elif inp == Command['DOWNLOAD'].value and is_connected:
+        path = input("please enetr file path you want to download: ")
+        download(path, inp)
 
 
 client.close()

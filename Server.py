@@ -1,5 +1,6 @@
 import socket
 from Commands import Command
+import os
 
 iP = '127.0.0.1'
 port = 2121
@@ -27,6 +28,28 @@ def upload():
 
     file.close()
 
+def download():
+    msg = "send filepath"
+    connection.sendto(msg.encode(FORMAT), ADDR)
+
+    filepath = connection.recv(SIZE).decode(FORMAT)
+    print(filepath, end="\n")
+    if (not os.path.exists(filepath)):
+        msg = "False"
+        connection.sendto(msg.encode(FORMAT), ADDR)
+        return
+    msg = "True"
+    connection.sendto(msg.encode(FORMAT), ADDR)
+    file = open(filepath, "r")
+
+    filename = os.path.basename(filepath)
+    data = file.read()
+    connection.sendto(filename.encode(FORMAT), ADDR)
+    connection.sendto(data.encode(FORMAT), ADDR)
+
+    recv = connection.recv(SIZE).decode(FORMAT)
+    print(recv, end="\n")
+
 def response():
     while True:
         request = connection.recv(SIZE).decode(FORMAT)
@@ -38,6 +61,8 @@ def response():
             connection.sendto(msg.encode(FORMAT), ADDR)
         elif (request == Command['UPLOAD'].value):
             upload()
+        elif (request == Command['DOWNLOAD'].value):
+            download()
         elif (request == Command['PWD'].value):
             connection.sendto(PATH.encode(FORMAT), ADDR)
             ackMsg = connection.recv(SIZE).decode(FORMAT)
