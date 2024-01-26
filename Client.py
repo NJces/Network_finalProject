@@ -1,17 +1,20 @@
 import socket
+import struct
+
 from Commands import Command
 import os
 
 iP = '127.0.0.1'
 port = 2121
+port_data = 2222
 ADDR = (iP, port)
+ADDR_data = (iP, port_data)
 FORMAT = "utf-8"
 SIZE = 1024
 PATH = "client_download/"
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 is_connected = False
-
 def help():
     print("\n===============Helper==============\n")
     print("\"connect\":\t connect to the server\n")
@@ -28,54 +31,67 @@ def connect(command):
     client.send(command.encode(FORMAT))
     print(f"Client connect to server on {ADDR}\n")
 
+def connect_data(path):
+    #client connect to server
+    client_data.connect(ADDR_data)
+    client_data.send(path.encode(FORMAT))
+    print(f"Client connect to server on {ADDR_data}\n")
 def upload(path, command):
+    connect_data(path)
     if (not os.path.exists(path)):
         print("file dosn't exist!")
         return
-    
-    client.send(command.encode(FORMAT))
-
-    msg = client.recv(SIZE).decode(FORMAT)
+    msg = client_data.recv(SIZE).decode(FORMAT)
     print(msg, end="\n")
 
     filename = input("please enetr name for uploaded file: ")
     filetype = input("please enetr type for uploaded file: ")
-    client.send(filename.encode(FORMAT))
-    client.send(filetype.encode(FORMAT))
+    #client_data.send(filename.encode(FORMAT))
+    client_data.sendto(filename.encode(FORMAT), ADDR_data)
+    #client_data.send(filetype.encode(FORMAT))
+    client_data.sendto(filetype.encode(FORMAT), ADDR_data)
+    # msg = client_data.recv(SIZE).decode(FORMAT)
+    # print(msg, end="\n")
+    file = open(path, "rb")
+    # filename = os.path.basename(path)
+    filesize = os.path.getsize(path)
+    client_data.sendto(struct.pack("i", filesize), ADDR_data)
+    data = file.read(SIZE)
+    while data:
+        client_data.sendto(data, ADDR_data)
+        data = file.read(SIZE)
 
-    msg = client.recv(SIZE).decode(FORMAT)
-    print(msg, end="\n")
-
-    file = open(path, "r")
-    data = file.read()
-    client.send(data.encode(FORMAT))
-
-    msg = client.recv(SIZE).decode(FORMAT)
-    print(msg, end="\n")
+    # msg = client_data.recv(SIZE).decode(FORMAT)
+    # print(msg, end="\n")
 
     file.close()
+    client_data.close()
 
 def download(path, command):
-    client.send(command.encode(FORMAT))
-
-    msg = client.recv(SIZE).decode(FORMAT)
+    connect_data(path)
+    msg = client_data.recv(SIZE).decode(FORMAT)
     print(msg, end="\n")
 
-    client.send(path.encode(FORMAT))
+    client_data.send(path.encode(FORMAT))
 
-    msg = client.recv(SIZE).decode(FORMAT)
+    msg = client_data.recv(SIZE).decode(FORMAT)
     print(msg, end="\n")
     if (msg == "False"):#file not found
         print("file not found!")
         return
-    filename = client.recv(SIZE).decode(FORMAT)
-    data = client.recv(SIZE).decode(FORMAT)
-    file = open(PATH+filename, "w")
-    file.write(data)
-    client.send("file download seccesfully".encode(FORMAT))
+    filename = client_data.recv(SIZE).decode(FORMAT)
+    file_size = struct.unpack("i", client_data.recv(SIZE))[0]
+    #data = client_data.recv(SIZE).decode(FORMAT)
+    file = open(PATH+filename, "wb")
+    s = 0
+    while s < file_size:
+        data = client_data.recv(SIZE)
+        file.write(data)
+        s += SIZE
+    client_data.send("file download seccesfully".encode(FORMAT))
 
     file.close()
-
+    client_data.close()
 
 def pwd(command):
     client.send(command.encode(FORMAT))
@@ -102,10 +118,14 @@ while True:
         print(recv)
     elif inp == Command['UPLOAD'].value and is_connected:
         path = input("please enetr file path you want to upload: ")
+        client_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.send(inp.encode(FORMAT))
         upload(path, inp)
     elif inp == Command['PWD'].value and is_connected:
         pwd(inp)
     elif inp == Command['DOWNLOAD'].value and is_connected:
+        client_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.send(inp.encode(FORMAT))
         path = input("please enetr file path you want to download: ")
         download(path, inp)
 
