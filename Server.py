@@ -93,6 +93,37 @@ def delete():
     if os.path.isfile(fname):
         os.remove(fname)
 
+def cd():
+    global PATH
+    dir_name = connection.recv(SIZE).decode(FORMAT)
+    print(dir_name)
+    # if (dir_name == ".." and PATH != "server_data/"):
+    #     head, tail = os.path.split(PATH)
+    #     print(head, end="\n")
+    #     print(tail)
+    #     PATH = head
+    #     msg = "True"
+    #     connection.sendto(msg.encode(FORMAT), ADDR)
+    #     return
+    if (not existDir(dir_name)): 
+        msg = "False"
+        connection.sendto(msg.encode(FORMAT), ADDR)
+        return
+    msg = "True"
+    connection.sendto(msg.encode(FORMAT), ADDR)
+    PATH = os.path.join(PATH, dir_name+"/")
+
+def existDir(dir_name):
+    global PATH
+    parent_directory = PATH.rstrip('/')
+    subdirectories = [d for d in os.listdir(parent_directory) if os.path.isdir(os.path.join(parent_directory, d))]
+    if dir_name in subdirectories:
+        print(f"The directory '{parent_directory}' contains the directory '{dir_name}'.")
+        return True
+    else:
+        print(f"The directory '{parent_directory}' does not contain the directory '{dir_name}'.")
+        return False
+
 def response():
     while True:
         request = connection.recv(SIZE).decode(FORMAT)
@@ -115,6 +146,10 @@ def response():
             showList()
         elif (request == Command['DELETE'].value):
             delete()
+        elif (request == Command['CD'].value):
+            cd()
+            connection.sendto(PATH.encode(FORMAT), ADDR)
+            ackMsg = connection.recv(SIZE).decode(FORMAT)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)

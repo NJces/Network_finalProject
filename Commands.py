@@ -9,6 +9,7 @@ class Command(Enum):
     PWD = "pwd"
     DELETE = "delete"
     LIST = "list"
+    CD = "cd"
     def Iscommand(input):
         isCmd = False
         for cmd in Command:

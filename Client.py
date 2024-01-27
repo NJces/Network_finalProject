@@ -114,6 +114,22 @@ def pwd(command):
     location = client.recv(SIZE).decode(FORMAT)
     print(f"you are now in \"{location}\" location on Server\n")
     client.send("ok".encode(FORMAT))
+
+def cd(command):
+    client.send(command.encode(FORMAT))
+
+    # msg = client.recv(SIZE).decode(FORMAT)
+    # print(msg, end="\n")
+
+    dir_name = input("please enter name of directory or \"..\" to back : ")
+    client.send(dir_name.encode(FORMAT))
+
+    msg = client.recv(SIZE).decode(FORMAT)
+    if (msg == "False"):
+        print("directory not found!!")
+        return
+    pwd("pwd")
+
     
 while True:
     print(f"enter \"{Command['HELP'].value}\" to see command or \"{Command['QUIT'].value}\" if want to exit program\n")
@@ -147,5 +163,7 @@ while True:
         showList(inp)
     elif inp == Command['DELETE'].value and is_connected:
         delete(inp)
+    elif inp == Command['CD'].value and is_connected:
+        cd(inp)
 
 client.close()
