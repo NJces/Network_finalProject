@@ -1,5 +1,6 @@
 import socket
 import struct
+import sys
 
 from Commands import Command
 import os
@@ -75,6 +76,22 @@ def download():
     print(recv, end="\n")
     file.close()
     connection_data.close()
+def showList():
+    #os.getcwd() +
+    list_files = os.listdir("./server_data")
+    connection.send(struct.pack("i", len(list_files)))
+    for i in list_files:
+        connection.send(struct.pack("i", sys.getsizeof(i)))
+        connection.send(i.encode('utf-8'))
+        connection.send(struct.pack("i", os.stat("./server_data/" + i).st_size))
+        connection.recv(SIZE)
+    print("Successfully sent file listing")
+    return
+def delete():
+    fname_length = struct.unpack("h", connection.recv(2))[0]
+    fname = connection.recv(fname_length)
+    if os.path.isfile(fname):
+        os.remove(fname)
 
 def response():
     while True:
@@ -94,6 +111,10 @@ def response():
         elif (request == Command['PWD'].value):
             connection.sendto(PATH.encode(FORMAT), ADDR)
             ackMsg = connection.recv(SIZE).decode(FORMAT)
+        elif (request == Command['LIST'].value):
+            showList()
+        elif (request == Command['DELETE'].value):
+            delete()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)

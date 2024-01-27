@@ -8,7 +8,7 @@ class Command(Enum):
     DOWNLOAD = "download"
     PWD = "pwd"
     DELETE = "delete"
-
+    LIST = "list"
     def Iscommand(input):
         isCmd = False
         for cmd in Command:

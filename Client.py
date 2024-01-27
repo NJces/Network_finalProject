@@ -1,5 +1,6 @@
 import socket
 import struct
+import sys
 
 from Commands import Command
 import os
@@ -36,6 +37,16 @@ def connect_data(path):
     client_data.connect(ADDR_data)
     client_data.send(path.encode(FORMAT))
     print(f"Client connect to server on {ADDR_data}\n")
+def showList(command):
+    client.send(command.encode(FORMAT))
+    number_of_files = struct.unpack("i", client.recv(4))[0]
+    for i in range(int(number_of_files)):
+        fname_size = struct.unpack("i", client.recv(4))[0]
+        fname = client.recv(fname_size)
+        fsize = struct.unpack("i", client.recv(4))[0]
+        print("\t{} - {}b".format(fname, fsize))
+        client.send("1".encode('utf-8'))
+
 def upload(path, command):
     connect_data(path)
     if (not os.path.exists(path)):
@@ -92,7 +103,11 @@ def download(path, command):
 
     file.close()
     client_data.close()
-
+def delete(command):
+    client.send(command.encode(FORMAT))
+    fname = input("please enetr file path you want to delete: ")
+    client.send(struct.pack("h", sys.getsizeof(fname)))
+    client.send(fname.encode(FORMAT))
 def pwd(command):
     client.send(command.encode(FORMAT))
 
@@ -128,6 +143,9 @@ while True:
         client.send(inp.encode(FORMAT))
         path = input("please enetr file path you want to download: ")
         download(path, inp)
-
+    elif inp == Command['LIST'].value and is_connected:
+        showList(inp)
+    elif inp == Command['DELETE'].value and is_connected:
+        delete(inp)
 
 client.close()
